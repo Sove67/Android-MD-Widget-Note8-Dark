@@ -71,6 +71,7 @@ class MarkdownFileWidget : AppWidgetProvider() {
         val file = loadMarkdown(context, fileUri)
         val text = MarkdownParser().parse(file)
         val views = RemoteViews(context.packageName, R.layout.markdown_file_widget)
+        views.setTextViewText(R.id.title, PREF_FILE)
         views.setTextViewText(R.id.markdown_display, text)
 
         // Tap Handling

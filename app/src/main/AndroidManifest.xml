@@ -19,7 +19,8 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/markdown_file_widget_info" />
-            <meta-data android:name="LauncherMetadata.Requirements.Scrollable"
+            <meta-data
+                android:name="LauncherMetadata.Requirements.Scrollable"
                 android:value="true" />
         </receiver>
 

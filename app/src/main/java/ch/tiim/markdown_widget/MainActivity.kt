@@ -2,7 +2,10 @@ package ch.tiim.markdown_widget
 
 import android.graphics.Paint
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.TextPaint
 import android.text.method.LinkMovementMethod
+import android.text.style.URLSpan
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -29,8 +32,21 @@ class MainActivity : AppCompatActivity() {
 
             textDisplay.text = text
 
-            textDisplay.paintFlags = textDisplay.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+            textDisplay.removeLinksUnderline()
             textDisplay.movementMethod = LinkMovementMethod.getInstance()
         }
     }
+}
+
+fun TextView.removeLinksUnderline() {
+    val spannable = SpannableString(text)
+    for (u in spannable.getSpans(0, spannable.length, URLSpan::class.java)) {
+        spannable.setSpan(object : URLSpan(u.url) {
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+            }
+        }, spannable.getSpanStart(u), spannable.getSpanEnd(u), 0)
+    }
+    text = spannable
 }

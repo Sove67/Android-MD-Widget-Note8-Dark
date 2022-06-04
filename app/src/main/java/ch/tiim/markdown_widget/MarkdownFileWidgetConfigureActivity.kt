@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.util.Log.DEBUG
 import android.view.View
 import android.widget.EditText
 import android.widget.RadioGroup
@@ -32,13 +34,17 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION.or( Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            flags =
+                Intent.FLAG_GRANT_READ_URI_PERMISSION.or(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
-        startActivityForResult(Intent.createChooser(intent, "Select a markdown file :)"), ACTIVITY_RESULT_BROWSE)
+        startActivityForResult(
+            Intent.createChooser(intent, "Select a markdown file"),
+            ACTIVITY_RESULT_BROWSE
+        )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if( requestCode == ACTIVITY_RESULT_BROWSE && resultCode == RESULT_OK && data?.data != null) {
+        if (requestCode == ACTIVITY_RESULT_BROWSE && resultCode == RESULT_OK && data?.data != null) {
             val uri: Uri = data.data!!
 
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -56,21 +62,7 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
 
         // When the button is clicked, store the string locally
         val widgetText = inputFilePath.text.toString()
-        savePref(context, appWidgetId, "filepath" , widgetText)
-
-        val tapBehaviour = when (radioGroup.checkedRadioButtonId) {
-            R.id.radio_noop -> {
-                TAP_BEHAVIOUR_NONE
-            }
-            R.id.radio_obsidian -> {
-                TAP_BEHAVIOUR_OBSIDIAN
-            }
-            else -> {
-                TAP_BEHAVIOUR_DEFAULT_APP
-            }
-        }
-        savePref(context, appWidgetId, "behaviour", tapBehaviour)
-
+        savePref(context, appWidgetId, PREF_FILE, widgetText)
 
         // It is the responsibility of the configuration activity to update the app widget
         AppWidgetManager.getInstance(context)
@@ -87,6 +79,7 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
     private lateinit var binding: MarkdownFileWidgetConfigureBinding
 
     public override fun onCreate(icicle: Bundle?) {
+        val context = this@MarkdownFileWidgetConfigureActivity
         super.onCreate(icicle)
 
         // Set the result to CANCELED.  This will cause the widget host to cancel
@@ -97,11 +90,10 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         setContentView(binding.root)
 
         inputFilePath = binding.inputFile
-        radioGroup = binding.radiogroup
+        inputFilePath.setText(loadPref(context, appWidgetId, PREF_FILE, ""))
+        Log.d("A", "B")
         binding.addButton.setOnClickListener(onAddWidget)
         binding.btnBrowse.setOnClickListener(onBrowse)
-        binding.radioDefaultApp.isSelected = true
-
 
         // Find the widget id from the intent.
         val intent = intent
@@ -134,9 +126,15 @@ internal fun savePref(context: Context, appWidgetId: Int, prefName: String, text
 
 // Read the prefix from the SharedPreferences object for this widget.
 // If there is no preference saved, use default
-internal fun loadPref(context: Context, appWidgetId: Int, prefName: String, default: String): String {
+internal fun loadPref(
+    context: Context,
+    appWidgetId: Int,
+    prefName: String,
+    default: String
+): String {
     val prefs = context.getSharedPreferences(PREFS_NAME, 0)
     val titleValue = prefs.getString("$PREF_PREFIX_KEY$appWidgetId--$prefName", null)
+
     return titleValue ?: default
 }
 

@@ -18,18 +18,20 @@ class MarkdownParser {
 
     private val parser: Parser
     private val renderer: HtmlRenderer
+
     init {
         val options = MutableDataSet()
 
         // uncomment to set optional extensions
-        options.set(Parser.EXTENSIONS,
+        options.set(
+            Parser.EXTENSIONS,
             listOf(
                 TablesExtension.create(),
                 StrikethroughExtension.create(),
                 TaskListExtension.create(),
                 WikiLinkExtension.create(),
                 YamlFrontMatterExtension.create(),
-                ) as @NotNull Collection<Extension>
+            ) as @NotNull Collection<Extension>
         )
 
         // uncomment to convert soft-breaks to hard breaks

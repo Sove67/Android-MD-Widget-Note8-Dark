@@ -1,5 +1,4 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.MarkdownWidget.AppWidget.Container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,16 +6,18 @@
     android:scrollbars="vertical">
 
     <TextView
-        android:id="@+id/markdown_display"
+        android:id="@+id/title"
+        style="@style/Widget.MarkdownWidget.AppWidget.Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:linksClickable="true"
-        android:orientation="vertical"
-        android:textAppearance="@android:style/TextAppearance.Small"
-        android:textColor="@android:color/primary_text_dark"
-        android:textColorLink="@android:color/primary_text_dark"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        />
+
+    <TextView
+        android:id="@+id/markdown_display"
+        style="@style/Widget.MarkdownWidget.AppWidget.File"
+        android:layout_width="match_parent"
+        android:layout_height="1000dp"
+        android:layout_below="@id/title"
+        />
 
 </RelativeLayout>

@@ -1,20 +1,14 @@
 package ch.tiim.markdown_widget
 
-import android.Manifest
 import android.app.Activity
 import android.appwidget.AppWidgetManager
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.RadioGroup
-import android.widget.RemoteViews
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import ch.tiim.markdown_widget.databinding.MarkdownFileWidgetConfigureBinding
 
 /**
@@ -37,15 +31,15 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         // https://developer.android.com/reference/android/content/Intent#ACTION_OPEN_DOCUMENT
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/markdown"
+            type = "*/*"
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION.or( Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
-        startActivityForResult(Intent.createChooser(intent, "Select a markdown file"), ACTIVITY_RESULT_BROWSE)
+        startActivityForResult(Intent.createChooser(intent, "Select a markdown file :)"), ACTIVITY_RESULT_BROWSE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if( requestCode == ACTIVITY_RESULT_BROWSE && resultCode == RESULT_OK && data?.data != null) {
-            val uri: Uri = data.data!!;
+            val uri: Uri = data.data!!
 
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
@@ -64,8 +58,7 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         val widgetText = inputFilePath.text.toString()
         savePref(context, appWidgetId, "filepath" , widgetText)
 
-        val rID = radioGroup.checkedRadioButtonId
-        val tapBehaviour = when (rID) {
+        val tapBehaviour = when (radioGroup.checkedRadioButtonId) {
             R.id.radio_noop -> {
                 TAP_BEHAVIOUR_NONE
             }
@@ -80,7 +73,7 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
 
 
         // It is the responsibility of the configuration activity to update the app widget
-        val appWidgetManager = AppWidgetManager.getInstance(context)
+        AppWidgetManager.getInstance(context)
 
         //appWidgetManager.updateAppWidget(appWidgetId, RemoteViews(context.packageName, R.layout.markdown_file_widget ))
         getUpdatePendingIntent(context, appWidgetId).send()

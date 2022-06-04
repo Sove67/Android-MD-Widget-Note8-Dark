@@ -1,23 +1,15 @@
 package ch.tiim.markdown_widget
 
 import android.app.PendingIntent
-import android.app.PendingIntent.CanceledException
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration.ORIENTATION_PORTRAIT
-import android.content.res.Resources
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.OpenableColumns
-import android.util.Log
-import android.util.SparseArray
-import android.webkit.WebView
 import android.widget.RemoteViews
 import java.io.BufferedReader
 import java.io.FileNotFoundException
@@ -25,16 +17,11 @@ import java.io.InputStream
 import java.io.InputStreamReader
 
 
-private const val TAG = "MarkdownFileWidget"
-
 /**
  * Implementation of App Widget functionality.
  * App Widget Configuration implemented in [MarkdownFileWidgetConfigureActivity]
  */
 class MarkdownFileWidget : AppWidgetProvider() {
-    companion object {
-        private val cachedMarkdown: SparseArray<MarkdownRenderer> = SparseArray()
-    }
 
     override fun onUpdate(
         context: Context,
@@ -74,54 +61,23 @@ class MarkdownFileWidget : AppWidgetProvider() {
     }
 
 
-    fun updateAppWidget(
+    private fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        WebView.enableSlowWholeDocumentDraw()
-        val size = WidgetSizeProvider(context)
-        val (width, height) = size.getWidgetsSize(appWidgetId)
-
-        val tapBehavior = loadPref(context, appWidgetId, PREF_BEHAVIOUR, TAP_BEHAVIOUR_DEFAULT_APP)
+        // Load File
         val fileUri = Uri.parse(loadPref(context, appWidgetId, PREF_FILE, ""))
-
-        val s = loadMarkdown(context, fileUri)
-
-        if (cachedMarkdown[appWidgetId] == null || cachedMarkdown[appWidgetId].needsUpdate(
-                width,
-                height,
-                s
-            )
-        ) {
-            cachedMarkdown.put(appWidgetId, MarkdownRenderer(context, width, height, s))
-        }
-        val md = cachedMarkdown[appWidgetId]
-
-        if (!md.isReady() || width == 0 || height == 0) {
-            Log.d(TAG, "not ready!")
-            val pendingUpdate = getUpdatePendingIntent(context, appWidgetId)
-            val handler = Handler(Looper.getMainLooper())
-            handler.postDelayed(Runnable {
-                try {
-                    pendingUpdate.send()
-                } catch (e: CanceledException) {
-                    e.printStackTrace()
-                }
-            }, 300)
-            return
-        }
-
-        Log.d(TAG, "is ready! :D :D")
-
-        // Render textview to bitmap
+        val file = loadMarkdown(context, fileUri)
+        val text = MarkdownParser().parse(file)
         val views = RemoteViews(context.packageName, R.layout.markdown_file_widget)
-        views.setImageViewBitmap(R.id.renderImg, md.getBitmap())
+        views.setTextViewText(R.id.markdown_display, text)
 
-        //views.setImageViewBitmap(R.id.renderImg, bitmap)
+        // Tap Handling
+        val tapBehavior = loadPref(context, appWidgetId, PREF_BEHAVIOUR, TAP_BEHAVIOUR_DEFAULT_APP)
         if (tapBehavior != TAP_BEHAVIOUR_NONE) {
             views.setOnClickPendingIntent(
-                R.id.renderImg,
+                R.id.markdown_display,
                 getIntent(context, fileUri, tapBehavior, context.contentResolver)
             )
         }
@@ -136,13 +92,12 @@ internal fun getUpdatePendingIntent(context: Context, appWidgetId: Int): Pending
     intentUpdate.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
     val idArray = intArrayOf(appWidgetId)
     intentUpdate.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, idArray)
-    val pendingUpdate = PendingIntent.getBroadcast(
+    return PendingIntent.getBroadcast(
         context,
         appWidgetId,
         intentUpdate,
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
-    return pendingUpdate
 }
 
 fun getIntent(context: Context, uri: Uri, tapBehavior: String, c: ContentResolver): PendingIntent {
@@ -158,7 +113,7 @@ fun getIntent(context: Context, uri: Uri, tapBehavior: String, c: ContentResolve
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 }
 
-fun getFileName(uri: Uri, c: ContentResolver): String? {
+fun getFileName(uri: Uri, c: ContentResolver): String {
     var result: String? = null
     if (uri.scheme == "content") {
         val cursor: Cursor? = c.query(uri, null, null, null, null)
@@ -193,25 +148,3 @@ fun loadMarkdown(context: Context, uri: Uri): String {
 }
 
 
-class WidgetSizeProvider(
-    private val context: Context // Do not pass Application context
-) {
-
-    private val appWidgetManager = AppWidgetManager.getInstance(context)
-
-    fun getWidgetsSize(widgetId: Int): Pair<Int, Int> {
-        val manager = AppWidgetManager.getInstance(context)
-        val isPortrait = context.resources.configuration.orientation == ORIENTATION_PORTRAIT
-        val (width, height) = listOf(
-            if (isPortrait) AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH
-            else AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,
-            if (isPortrait) AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT
-            else AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT
-        ).map { manager.getAppWidgetOptions(widgetId).getInt(it, 0).dp.toInt() }
-
-        Log.d(TAG, "Device size: $width $height")
-        return width to height
-    }
-
-    private val Number.dp: Float get() = this.toFloat() * Resources.getSystem().displayMetrics.density
-}

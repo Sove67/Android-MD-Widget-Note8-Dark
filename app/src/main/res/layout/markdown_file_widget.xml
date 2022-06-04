@@ -1,16 +1,22 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     style="@style/Widget.MarkdownWidget.AppWidget.Container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff">
-    <!--android:theme="@style/Theme.MarkdownWidget.AppWidgetContainer"-->
+    android:clipChildren="true"
+    android:scrollbars="vertical">
 
-    <ImageView
-        android:id="@+id/renderImg"
+    <TextView
+        android:id="@+id/markdown_display"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY" />
+        android:layout_height="wrap_content"
+        android:linksClickable="true"
+        android:orientation="vertical"
+        android:textAppearance="@android:style/TextAppearance.Small"
+        android:textColor="@android:color/primary_text_dark"
+        android:textColorLink="@android:color/primary_text_dark"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </RelativeLayout>

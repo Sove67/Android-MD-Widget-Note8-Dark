@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -20,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:labelFor="@id/input_file"
-        android:text="Markdown file" />
+        android:text="@string/markdown_file" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -43,7 +42,7 @@
             android:id="@+id/btn_browse"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Browse"
+            android:text="@string/browse"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -59,25 +58,25 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:labelFor="@id/input_file"
-            android:text="What to do when tapping the widget:" />
+            android:text="@string/what_to_do_when_tapping_the_widget" />
 
         <RadioButton
             android:id="@+id/radio_default_app"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Open in default markdown app" />
+            android:text="@string/open_in_default_markdown_app" />
 
         <RadioButton
             android:id="@+id/radio_obsidian"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Open in obsidian note taking app" />
+            android:text="@string/open_in_obsidian_note_taking_app" />
 
         <RadioButton
             android:id="@+id/radio_noop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Do not open" />
+            android:text="@string/do_not_open" />
     </RadioGroup>
 
     <Button

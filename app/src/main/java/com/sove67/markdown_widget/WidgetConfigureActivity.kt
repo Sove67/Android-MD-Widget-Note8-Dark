@@ -1,35 +1,32 @@
-package ch.tiim.markdown_widget
+package com.sove67.markdown_widget
 
 import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.util.Log.DEBUG
 import android.view.View
 import android.widget.EditText
-import android.widget.RadioGroup
-import ch.tiim.markdown_widget.databinding.MarkdownFileWidgetConfigureBinding
+import com.sove67.markdown_widget.databinding.MarkdownFileWidgetConfigureBinding
 
 /**
- * The configuration screen for the [MarkdownFileWidget] AppWidget.
+ * The configuration screen for the [WidgetProvider] AppWidget.
  */
-internal const val TAP_BEHAVIOUR_NONE = "none"
-internal const val TAP_BEHAVIOUR_DEFAULT_APP = "default_app"
-internal const val TAP_BEHAVIOUR_OBSIDIAN = "obsidian"
-
-private const val ACTIVITY_RESULT_BROWSE = 1
 
 internal const val PREF_FILE = "filepath"
 internal const val PREF_BEHAVIOUR = "behaviour"
 
-class MarkdownFileWidgetConfigureActivity : Activity() {
+class WidgetConfigureActivity : Activity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private lateinit var inputFilePath: EditText
-    private lateinit var radioGroup: RadioGroup
+    private lateinit var inputFileName: String
+
+    // Browse the Android Filesystem for files of type: Any
     private val onBrowse = View.OnClickListener {
+        Log.d(null, "onBrowse Triggered")
         // https://developer.android.com/reference/android/content/Intent#ACTION_OPEN_DOCUMENT
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -39,17 +36,19 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         }
         startActivityForResult(
             Intent.createChooser(intent, "Select a markdown file"),
-            ACTIVITY_RESULT_BROWSE
+            0
         )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == ACTIVITY_RESULT_BROWSE && resultCode == RESULT_OK && data?.data != null) {
+        if (resultCode == RESULT_OK && data?.data != null) {
             val uri: Uri = data.data!!
+            Log.d(null, uri.toString())
+            inputFileName = uri.toString()
 
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-            val context = this@MarkdownFileWidgetConfigureActivity
+            val context = this@WidgetConfigureActivity
             val text = uri.toString()
             inputFilePath.setText(text.toCharArray(), 0, text.length)
 
@@ -58,17 +57,16 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
     }
 
     private val onAddWidget = View.OnClickListener {
-        val context = this@MarkdownFileWidgetConfigureActivity
+        val context = this@WidgetConfigureActivity
 
-        // When the button is clicked, store the string locally
+        Log.d(null, "saving")
+
+        // Update the app widget via the configuration activity
+        AppWidgetManager.getInstance(context)
+        getUpdatePendingIntent(context, appWidgetId).send()
+
         val widgetText = inputFilePath.text.toString()
         savePref(context, appWidgetId, PREF_FILE, widgetText)
-
-        // It is the responsibility of the configuration activity to update the app widget
-        AppWidgetManager.getInstance(context)
-
-        //appWidgetManager.updateAppWidget(appWidgetId, RemoteViews(context.packageName, R.layout.markdown_file_widget ))
-        getUpdatePendingIntent(context, appWidgetId).send()
 
         // Make sure we pass back the original appWidgetId
         val resultValue = Intent()
@@ -76,45 +74,40 @@ class MarkdownFileWidgetConfigureActivity : Activity() {
         setResult(RESULT_OK, resultValue)
         finish()
     }
+
     private lateinit var binding: MarkdownFileWidgetConfigureBinding
 
     public override fun onCreate(icicle: Bundle?) {
-        val context = this@MarkdownFileWidgetConfigureActivity
         super.onCreate(icicle)
-
-        // Set the result to CANCELED.  This will cause the widget host to cancel
-        // out of the widget placement if the user presses the back button.
-        setResult(RESULT_CANCELED)
-
-        binding = MarkdownFileWidgetConfigureBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        inputFilePath = binding.inputFile
-        inputFilePath.setText(loadPref(context, appWidgetId, PREF_FILE, ""))
-        Log.d("A", "B")
-        binding.addButton.setOnClickListener(onAddWidget)
-        binding.btnBrowse.setOnClickListener(onBrowse)
+        setContentView(R.layout.markdown_file_widget_configure)
 
         // Find the widget id from the intent.
-        val intent = intent
-        val extras = intent.extras
+        val configIntent = intent
+        val extras = configIntent.extras
         if (extras != null) {
             appWidgetId = extras.getInt(
                 AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID
             )
         }
+        val resultValue = Intent()
+        resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        setResult(RESULT_CANCELED, resultValue)
 
         // If this activity was started with an intent without an app widget ID, finish with an error.
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish()
-            return
         }
 
+        // Open the Configuration Menu
+        binding = MarkdownFileWidgetConfigureBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        inputFilePath = binding.inputFile
+        binding.btnBrowse.setOnClickListener(onBrowse)
+        binding.saveButton.setOnClickListener(onAddWidget)
     }
-
 }
 
-private const val PREFS_NAME = "ch.tiim.markdown_widget.MarkdownFileWidget"
+private const val PREFS_NAME = "com.sove67.markdown_widget"
 private const val PREF_PREFIX_KEY = "appwidget_"
 
 // Write the prefix to the SharedPreferences object for this widget
@@ -126,12 +119,7 @@ internal fun savePref(context: Context, appWidgetId: Int, prefName: String, text
 
 // Read the prefix from the SharedPreferences object for this widget.
 // If there is no preference saved, use default
-internal fun loadPref(
-    context: Context,
-    appWidgetId: Int,
-    prefName: String,
-    default: String
-): String {
+internal fun loadPref(context: Context, appWidgetId: Int, prefName: String, default: String): String {
     val prefs = context.getSharedPreferences(PREFS_NAME, 0)
     val titleValue = prefs.getString("$PREF_PREFIX_KEY$appWidgetId--$prefName", null)
 

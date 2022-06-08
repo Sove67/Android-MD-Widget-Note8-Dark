@@ -1,23 +1,10 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Widget.MarkdownWidget.AppWidget.Container"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="true"
-    android:scrollbars="vertical">
+    >
 
-    <TextView
-        android:id="@+id/title"
-        style="@style/Widget.MarkdownWidget.AppWidget.Title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <ListView
+        style="@style/Scrollable"
+        android:id="@+id/scrollable"
         />
-
-    <TextView
-        android:id="@+id/markdown_display"
-        style="@style/Widget.MarkdownWidget.AppWidget.File"
-        android:layout_width="match_parent"
-        android:layout_height="1000dp"
-        android:layout_below="@id/title"
-        />
-
-</RelativeLayout>
+</LinearLayout>

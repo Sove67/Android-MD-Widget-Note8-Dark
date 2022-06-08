@@ -17,4 +17,7 @@
     <string name="open_in_default_markdown_app">Open in default markdown app</string>
     <string name="open_in_obsidian_note_taking_app">Open in obsidian note taking app</string>
     <string name="do_not_open">Do not open</string>
+    <string name="static_placeholder">Static Markdown Display</string>
+    <string name="hint">Markdown File Filepath</string>
+    <string name="line_text_placeholder">Line Text Placeholder</string>
 </resources>

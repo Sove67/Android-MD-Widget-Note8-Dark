@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:configure="ch.tiim.markdown_widget.MarkdownFileWidgetConfigureActivity"
+    android:configure="com.sove67.markdown_widget.WidgetConfigureActivity"
     android:description="@string/app_widget_description"
     android:initialKeyguardLayout="@layout/markdown_file_widget"
     android:initialLayout="@layout/markdown_file_widget"

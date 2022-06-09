@@ -19,6 +19,7 @@
         <item name="android:textColorHighlight">@color/transparent</item>
         <item name="android:textColorLink">@drawable/file_link</item>
         <item name="android:linksClickable">true</item>
+        <item name="android:text">@string/line_text_placeholder</item>
     </style>
 
 </resources>

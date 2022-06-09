@@ -1,7 +1,6 @@
 package com.sove67.markdown_widget
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -39,10 +38,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        Log.d(null, TEST_TEXT)
-        val spanList = Parser(baseContext).parse(TEST_TITLE, TEST_TEXT)
+        val output = Parser().parse(TEST_TITLE, TEST_TEXT)
         val scrollable = findViewById<ListView>(R.id.scrollable)
-        scrollable.adapter = MainService(baseContext, spanList)
+        scrollable.adapter = MainService(baseContext, output)
 
         /*
         scrollable.onItemClickListener = OnItemClickListener { _, _, position, _ ->

@@ -12,4 +12,5 @@
     <string name="browse">Browse</string>
     <string name="hint">Markdown File Filepath</string>
     <string name="line_text_placeholder">Line Text Placeholder</string>
+    <string name="prefix_image">prefixImage</string>
 </resources>

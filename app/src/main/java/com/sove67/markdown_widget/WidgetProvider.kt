@@ -3,13 +3,10 @@ package com.sove67.markdown_widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.widget.RemoteViews
 import java.io.BufferedReader
 import java.io.FileNotFoundException
@@ -57,18 +54,6 @@ class WidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        // Get Path
-        val path = loadPref(context, appWidgetId, PREF_FILE, "")
-
-        /*
-        val fileUri = Uri.parse(path)
-        val file = loadMarkdown(context, fileUri)
-        val title = getObsidianFileNameFromPath(path)
-        val bundle = when (val parserOutput = Parser(context).parse(title, file,true)) {
-            is Parser.L -> {parserOutput.value}
-            is Parser.R -> {throw Exception("Invalid datatype")}
-         */
-
         // Create Remote View
         val views = RemoteViews(context.packageName, R.layout.markdown_file_widget)
 
@@ -76,19 +61,12 @@ class WidgetProvider : AppWidgetProvider() {
         val serviceIntent = Intent(context, WidgetService::class.java)
         serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         serviceIntent.data = Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME))
-        //serviceIntent.putExtra("stringListBundle", bundle)
-        serviceIntent.putExtra("path", path)
 
         // Set Adapter
         views.setRemoteAdapter(R.id.scrollable, serviceIntent)
 
-        /* Tap Handling
-        views.setOnClickPendingIntent(
-            R.id.markdown_display,
-            getIntent(context, fileUri, context.contentResolver))
-        */
-
         // Instruct the widget manager to update the widget
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.scrollable)
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 }
@@ -106,35 +84,6 @@ internal fun getUpdatePendingIntent(context: Context, appWidgetId: Int): Pending
     )
 }
 
-fun getIntent(context: Context, uri: Uri, c: ContentResolver): PendingIntent {
-    val intent = Intent(Intent.ACTION_EDIT)
-    intent.data = Uri.parse("obsidian://open?file=" + Uri.encode(getFileName(uri, c)))
-    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-}
-
-fun getFileName(uri: Uri, c: ContentResolver): String {
-    var result: String? = null
-    if (uri.scheme == "content") {
-        val cursor: Cursor? = c.query(uri, null, null, null, null)
-        try {
-            if (cursor != null && cursor.moveToFirst()) {
-                val i = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                result = cursor.getString(i)
-            }
-        } finally {
-            cursor?.close()
-        }
-    }
-    if (result == null) {
-        result = uri.path
-        val cut = result!!.lastIndexOf('/')
-        if (cut != (-1)) {
-            result = result.substring(cut + 1)
-        }
-    }
-    return result
-}
-
 fun loadMarkdown(context: Context, uri: Uri): String {
     return try {
         val ins: InputStream = context.contentResolver.openInputStream(uri)!!
@@ -142,7 +91,7 @@ fun loadMarkdown(context: Context, uri: Uri): String {
         val string = reader.lines().collect(Collectors.joining("\n"))
         string
     } catch (err: FileNotFoundException) {
-        ""
+        "No file found"
     }
 }
 

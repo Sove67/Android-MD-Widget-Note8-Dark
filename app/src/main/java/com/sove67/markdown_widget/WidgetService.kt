@@ -1,10 +1,13 @@
 package com.sove67.markdown_widget
 
+import android.R.attr.resource
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.*
 import android.net.Uri
 import android.text.SpannableStringBuilder
+import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 
@@ -13,17 +16,17 @@ class WidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
         return WidgetItemFactory(applicationContext, intent)
     }
-    // Intent handler, see this: https://medium.com/@workingkills/you-wont-believe-this-one-weird-trick-to-handle-android-intent-extras-with-kotlin-845ecf09e0e9
-
 
     internal inner class WidgetItemFactory(context: Context, intent: Intent) :
         RemoteViewsFactory {
         private val context: Context
         private val appWidgetId: Int
 
-        private var path: String?
-        private var file: String
-        //private var stringList: ArrayList<ArrayList<String>> = ArrayList()
+        private lateinit var path: String
+        private lateinit var file: String
+        private lateinit var title: String
+
+        private var imgList: ArrayList<String> = ArrayList()
         private var spanList: ArrayList<SpannableStringBuilder> = ArrayList()
 
         override fun onCreate() { updateData() }
@@ -35,6 +38,31 @@ class WidgetService : RemoteViewsService() {
         override fun getViewAt(position: Int): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.list_line)
             views.setTextViewText(R.id.text, spanList[position])
+
+            val imgName = imgList[position]
+            if (imgName != "") {
+                val resID: Int = context.resources.getIdentifier(
+                    imgName,
+                    "drawable",
+                    packageName
+                )
+                val icon = BitmapFactory.decodeResource(
+                    context.resources,
+                    resID
+                )
+                val color = resources.getColor(R.color.purple_200)
+                val tintedIcon = useImageAsMask(icon, color)
+                views.setImageViewBitmap(R.id.prefix, tintedIcon)
+
+                views.setViewVisibility(R.id.prefix, View.VISIBLE)
+            } else { views.setViewVisibility(R.id.prefix, View.GONE) }
+
+            /*
+            if (position == 0){
+                val listenerIntent = getIntent(context, path)
+                views.setOnClickPendingIntent(R.id.text, listenerIntent)
+            }*/
+
             return views
         }
 
@@ -48,12 +76,6 @@ class WidgetService : RemoteViewsService() {
 
         init {
             this.context = context
-            //val objectBundle = intent.getBundleExtra("stringListBundle")
-            //stringList = objectBundle!!.getSerializable("stringList") as ArrayList<ArrayList<String>>
-
-            path = intent.getStringExtra("path")
-            file = loadMarkdown(context, Uri.parse(path))
-
             appWidgetId = intent.getIntExtra(
                 AppWidgetManager.EXTRA_APPWIDGET_ID,
                 AppWidgetManager.INVALID_APPWIDGET_ID
@@ -61,31 +83,22 @@ class WidgetService : RemoteViewsService() {
         }
 
         private fun updateData(){
+            path = loadPref(context, appWidgetId, PREF_FILE, "")
             file = loadMarkdown(context, Uri.parse(path))
-            val title = getObsidianFileNameFromPath(path!!)
-            spanList = Parser(context).parse(title, file)
+            title = formatFileName(getFileName(path))
 
-            /*
-            val parser = Parser(context)
-            val lineList: ArrayList<SpannableStringBuilder> = ArrayList()
-            for (entry in stringList){
-                val builder = SpannableStringBuilder(entry[0])
-
-                for (i in 1 until entry.size){
-                    val span = Parser.Span().parse(entry[i])
-                    Log.d(null, "Setting span for line '${entry[0]}', of type '${span.spanKey}', from indexes ${span.start} to ${span.end}")
-                    builder.setSpan(
-                        parser.spanStyleMap[span.spanKey],
-                        span.start,
-                        span.end,
-                        parser.flag
-                    )
-                }
-                lineList.add(builder)
-            }
-
-            spanList = lineList
-            */
+            val output = Parser().parse(title, file)
+            imgList = output.first
+            spanList = output.second
         }
     }
+}
+
+fun useImageAsMask(bitmap: Bitmap, color: Int): Bitmap? {
+    val paint = Paint()
+    paint.colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+    val bitmapResult = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmapResult)
+    canvas.drawBitmap(bitmap, 0f, 0f, paint)
+    return bitmapResult
 }

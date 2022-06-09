@@ -5,15 +5,17 @@ saved using CommonMark formatting. It may also partially function with other for
 
 ## Features
 * Open any markdown or text file on your phone and display it as an home screen widget.
-* The widget is updated in a regular, 30 minute interval.
+* The widget is updated in a regular, 30 minute interval, and anytime the user configures it.
 * Transparent Note Background
 * White Text designed for dark wallpapers
 * Scrolling
 * Note Title
+* Purple Highlighting
 * Prefix Formatting
   * Headers 1 - 3
   * Bullet Lists
-  * Checkbox (Non Interactive)
+  * Checkboxes (Non Interactive)
+  * Enumerated Lists up to 9 entries long
 
 Currently the widget is non-interactive. Tapping on links or checkboxes does not do anything.
 
@@ -28,10 +30,6 @@ Currently the widget is non-interactive. Tapping on links or checkboxes does not
   * Links
 * View File In Obsidian when title is tapped
 * Reactive Widget Updates
-
-## Known Bugs
-* Checkboxes don't display as purple in the widget, only the app
-* While changing the selected document via the configuration menu does update the widget's data, it does not refresh it's display. Currently, the user must wait for the next cycle of the 30 minute interval update schedule. Alternatively, they can delete the widget and add it once more to force an update.
 
 ## License
 [GNU General Public License v3.0](https://github.com/Sove67/Android-MD-Widget-Note8-Dark/blob/main/LICENSE.md)

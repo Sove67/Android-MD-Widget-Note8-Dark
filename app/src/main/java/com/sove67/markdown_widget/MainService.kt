@@ -6,20 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
-import android.widget.TextView
+import android.widget.Button
+import android.widget.ImageButton
+import androidx.core.content.ContextCompat
 
 class MainService(
     context: Context,
-    private val dataSource: ArrayList<SpannableStringBuilder>) : BaseAdapter() {
+    private val dataSource: Pair<ArrayList<String>, ArrayList<SpannableStringBuilder>>) : BaseAdapter() {
 
     private val inflater: LayoutInflater
             = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 
     override fun getCount(): Int
-    { return dataSource.size }
+    { return dataSource.first.size }
 
-    override fun getItem(position: Int): Any
-    { return dataSource[position] }
+    override fun getItem(position: Int): Pair<String, SpannableStringBuilder>
+    { return Pair(dataSource.first[position], dataSource.second[position]) }
 
     override fun getItemId(position: Int): Long
     { return position.toLong() }
@@ -30,11 +32,11 @@ class MainService(
         val holder: ViewHolder
 
         if (convertView == null) {
-
             view = inflater.inflate(R.layout.list_line, parent, false)
 
             holder = ViewHolder()
-            holder.textView = view.findViewById(R.id.text) as TextView
+            holder.imageButton = view.findViewById(R.id.prefix) as ImageButton
+            holder.button = view.findViewById(R.id.text) as Button
 
             view.tag = holder
         } else {
@@ -42,13 +44,32 @@ class MainService(
             holder = convertView.tag as ViewHolder
         }
 
-        val item = getItem(position) as SpannableStringBuilder
-        holder.textView.text = item
+        val item = getItem(position)
+        holder.button.text = item.second
+
+        val imgName = item.first
+        if (imgName != "") {
+            val resID: Int = parent.context.resources.getIdentifier(
+                imgName,
+                "drawable",
+                parent.context.packageName
+            )
+            holder.imageButton.setImageResource(resID)
+            holder.imageButton.visibility = View.VISIBLE
+            holder.imageButton.setColorFilter(
+                ContextCompat.getColor(parent.context, R.color.purple_200),
+                android.graphics.PorterDuff.Mode.MULTIPLY
+                )
+        } else {  holder.imageButton.visibility = View.GONE }
+
 
         return view
     }
 
     // The data required for a single list item view
     private class ViewHolder
-    { lateinit var textView: TextView }
+    {
+        lateinit var imageButton: ImageButton
+        lateinit var button: Button
+    }
 }

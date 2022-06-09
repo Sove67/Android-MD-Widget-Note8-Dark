@@ -1,7 +1,40 @@
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    style="@style/Text"
-    android:id="@+id/text"
-    android:minHeight="14sp"
-    android:text="@string/line_text_placeholder"
-    />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="horizontal">
+    <!-- Include other widget or layout tags here. These are considered
+            "child views" or "children" of the linear layout -->
+
+    <ImageButton
+        android:id="@+id/prefix"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|start"
+        android:adjustViewBounds="true"
+        android:background="@color/transparent"
+        android:contentDescription="@string/prefix_image"
+        android:src="@drawable/circled_digit_one"
+        android:scaleType="centerInside"
+        app:tint="@color/purple_200"
+
+        />
+
+    <Button
+        android:id="@+id/text"
+        style="@style/Text"
+        android:minHeight="20dp"
+        android:minWidth="0dp"
+        android:padding="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:background="@color/transparent"
+        android:gravity="start|top"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:textAllCaps="false"
+        />
+</LinearLayout>

@@ -1,60 +1,55 @@
 package com.sove67.markdown_widget
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Typeface
+import android.net.Uri
 import android.text.Spannable
 import android.text.SpannableStringBuilder
-import android.text.TextPaint
 import android.text.style.*
-import android.util.Log
-import android.view.View
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 
 private const val BREAK_STRING = "\n"
+private const val TAB_REPLACEMENT = "    "
 
-class Parser(context: Context) {
-
-    fun parse (title: String?, md: String):ArrayList<SpannableStringBuilder> {
+class Parser {
+    fun parse (title: String?, md: String)
+    :Pair<ArrayList<String>, ArrayList<SpannableStringBuilder>> {
         val lines: ArrayList<String> = md
-            .replace("\t", "    ")
+            .replace("\t", TAB_REPLACEMENT)
             .split(BREAK_STRING)
             .toCollection(ArrayList())
+        val imgLines: ArrayList<String> = ArrayList()
         val spannedLines: ArrayList<SpannableStringBuilder> = ArrayList()
 
         // span and add title
         if (title != null) {
             val builder = SpannableStringBuilder(title)
-            spannedLines.add(addStyle(builder, -1, 0, title.length))
+            spannedLines.add(addLineStyle(builder, 0))
+            imgLines.add("")
         }
 
         for (line:String in lines)
         {
-            Log.d(null, "Checking line: \"$line\"")
-            var value = SpannableStringBuilder(line)
-            val (index: Int, format: String) = findFormatPrefix(line)
-            if (index != (-1))
+            val (newString: String, indentLevel:Int, format:Prefix?) = cutPrefix(line)
+            var value = SpannableStringBuilder(newString)
+            if (format != null)
             {
-                // If the key is found in the format map
-                formatPrefix[format]?.let {
-                    Log.d(null, "Applying format ${it.second}.")
-
-                    // replace it's occurrence in the line with the map's first value (the string)
-                    // and update the builder to match
-                    val finalLine = line.replaceFirst(format, it.first)
-                    val builder = SpannableStringBuilder(finalLine)
-
-                    // Add decoration depending on the map's second value (the int)
-                    // https://developer.android.com/reference/android/text/style/package-summary
-
-                    val prefixEnd = index + it.first.length
-
-                    value = addStyle(builder, it.second, index, prefixEnd)
+                if (format.styleKey != -1)
+                {
+                    val builder = SpannableStringBuilder(newString)
+                    value = addLineStyle(builder, format.styleKey)
                 }
+
+                imgLines.add(format.imgName)
+            } else {
+                imgLines.add("")
             }
+
 
             // format remaining markdown
             // TO DO
@@ -62,7 +57,7 @@ class Parser(context: Context) {
             spannedLines.add(value)
         }
 
-        return spannedLines
+        return Pair(imgLines, spannedLines)
     }
 
     private val highlight: ForegroundColorSpan = ForegroundColorSpan(Color.parseColor("#FFB07FFF"))
@@ -70,137 +65,120 @@ class Parser(context: Context) {
     private val strikethrough = StrikethroughSpan()
     private val huge: RelativeSizeSpan = RelativeSizeSpan(1.75f)
     private val big: RelativeSizeSpan = RelativeSizeSpan(1.25f)
-    private val specialCharacter = CustomTypefaceSpan(Typeface.createFromAsset(context.assets, "sawarabi_mincho_regular.ttf"))
     private val flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-
-    // The OnClick listener is empty, as it doesn't seem to function in remote views.
-    private val checkbox: ClickableSpan = object : ClickableSpan() {
-        override fun onClick(textView: View) {
-            //startActivity(Intent(this@MyActivity, NextActivity::class.java))
-        }
-
-        override fun updateDrawState(ds: TextPaint) {
-            super.updateDrawState(ds)
-            ds.isUnderlineText = false
-        }
-    }
 
     //①②③④⑤⑥⑦⑧⑨
     //。◉◎
     //◌○◔◑◕●
-    private var formatPrefix: Map<String, Pair<String, Int>> = mapOf(
-        "1. " to Pair("① ", 0),
-        "2. " to Pair("② ", 0),
-        "3. " to Pair("③ ", 0),
-        "4. " to Pair("④ ", 0),
-        "5. " to Pair("⑤ ", 0),
-        "6. " to Pair("⑥ ", 0),
-        "7. " to Pair("⑦ ", 0),
-        "8. " to Pair("⑧ ", 0),
-        "9. " to Pair("⑨ ", 0),
-        "- " to Pair("◦ ", 0),
-        "- [ ] " to Pair("◎ ", 1),
-        "- [x] " to Pair("◉ ", 2),
-        "# " to Pair("", 3),
-        "## " to Pair("    ", 3),
-        "### " to Pair("        ", 3)
+    // https://stackoverflow.com/questions/17142331/convert-truetype-glyphs-to-png-image
+    private val prefixFormats: Array<Prefix> = arrayOf(
+        Prefix("1. ", -1, "circled_digit_one"),
+        Prefix("2. ", -1, "circled_digit_two"),
+        Prefix("3. ", -1, "circled_digit_three"),
+        Prefix("4. ", -1, "circled_digit_four"),
+        Prefix("5. ", -1, "circled_digit_five"),
+        Prefix("6. ", -1, "circled_digit_six"),
+        Prefix("7. ", -1, "circled_digit_seven"),
+        Prefix("8. ", -1, "circled_digit_eight"),
+        Prefix("9. ", -1, "circled_digit_nine"),
+        Prefix("- ", -1, "white_bullet"),
+        Prefix("- [ ] ", -1, "bullseye"),
+        // Skip styleKey 0, reserved for title formatting
+        Prefix("# ", 1, ""),
+        Prefix("## ", 1, ""),
+        Prefix("### ", 1, ""),
+        Prefix("- [x] ", 2, "fisheye")
     )
 
-    private fun addStyle(builder: SpannableStringBuilder, format: Int, index: Int, prefixEnd: Int)
-        : SpannableStringBuilder {
+    data class Prefix(val literal:String, val styleKey:Int, val imgName:String)
+
+    // For styling the entire line
+    private fun addLineStyle(builder: SpannableStringBuilder, format: Int): SpannableStringBuilder
+    {
         when (format) {
-            -1 -> {
+            // Title
+            0 -> {
                 builder.setSpan(highlight, 0, builder.length, flag) //Purple
                 builder.setSpan(bold, 0, builder.length, flag) //Bold
                 builder.setSpan(huge, 0, builder.length, flag) //Size
             }
-            // Bullet & Numbers
-            0 -> {
-                builder.setSpan(highlight, index, prefixEnd, flag)
-                builder.setSpan(specialCharacter, index, prefixEnd, flag)
-            }
-            // Checkbox (Not Done)
-            1 -> {
-                builder.setSpan(checkbox, index, prefixEnd, flag)
-                builder.setSpan(specialCharacter, index, prefixEnd, flag)
-            }
-            // Checkbox (Done)
-            2 -> {
-                builder.setSpan(checkbox, index, prefixEnd, flag)
-                builder.setSpan(specialCharacter, index, prefixEnd, flag)
-                builder.setSpan(strikethrough, prefixEnd, builder.length, flag)
-            }
             // Headers
-            3 -> {
+            1 -> {
                 builder.setSpan(highlight, 0, builder.length, flag) //Purple
                 builder.setSpan(bold, 0, builder.length, flag) //Bold
                 builder.setSpan(big, 0, builder.length, flag) //Size
             }
+            // Checkbox (Done)
+            2 -> {
+                builder.setSpan(strikethrough, 0, builder.length, flag)
+            }
+            // Call inline styling on the entire line
+            else -> return addInlineStyle(builder, format, 0, builder.length)
+        }
+        return builder
+    }
+
+    // For Inline styles
+    private fun addInlineStyle(builder: SpannableStringBuilder, format: Int, start: Int, end: Int)
+        : SpannableStringBuilder {
+        when (format) {
             else -> throw Exception("Invalid format range in 'setBuilder'")
         }
         return builder
     }
 
-    private fun findFormatPrefix(string: String): Pair<Int, String> {
-        var foundKey = ""
-        val endWhitespace: Int = getFirstNonWhitespace(string)
-        // Check string for key
+    private fun cutPrefix(string: String): Triple<String, Int, Prefix?> {
+        // Set defaults
         var mapIndex = 0
+        var indent = 0
+        var endIndex = 0
+        var style: Prefix? = null
+        var newString = string
+
+        // Check string for key
         do {
             // Find index of key
-            val key: String = formatPrefix.keys.toTypedArray()[mapIndex]
-            val p: Pattern = Pattern.compile(Pattern.quote(key))
-            val matcher: Matcher = p.matcher(string)
-            val bool = matcher.find()
+            val literal: String = prefixFormats[mapIndex].literal
 
-            // Check Against Whitespace Index
-            if (bool && (endWhitespace == matcher.start()))
-            {
+            // Check Whitespace
+            val whiteSpace: Pattern = Pattern.compile("\\s*")
+            val whiteSpaceMatcher: Matcher = whiteSpace.matcher(string)
+            if (string.isNotEmpty()
+                && whiteSpaceMatcher.find()
+                && whiteSpaceMatcher.start() == 0){
+                indent = whiteSpaceMatcher.end() / TAB_REPLACEMENT.length
+            }
 
-                foundKey = key
+            // Check Prefix
+            val prefix: Pattern = Pattern.compile("\\s*${Pattern.quote(literal)}")
+            val prefixMatcher: Matcher = prefix.matcher(string)
+            if (string.isNotEmpty()
+                && prefixMatcher.find()
+                && prefixMatcher.start() == 0){
+                endIndex = prefixMatcher.end()
+                style = prefixFormats[mapIndex]
             }
             mapIndex++
         }
-        while (mapIndex < formatPrefix.keys.size)
+        while (mapIndex < prefixFormats.size)
+
+        // If a prefix was found, remove it
+        if (endIndex != 0)
+        { newString = string.substring(endIndex, string.length) }
 
         // Invalidate index if no key is found
-        val start: Int =
-            if (foundKey != "") endWhitespace else -1
-
-        return Pair(start, foundKey)
-    }
-
-    private fun getFirstNonWhitespace(string:String): Int{
-
-        val p: Pattern = Pattern.compile("\\s+")
-        val matcher: Matcher = p.matcher(string)
-
-        return if (string.isNotEmpty()
-            && matcher.find()
-            && string[0] == ' '
-            && matcher.start() == 0){
-            matcher.end()
-        } else { 0 } //Default end index to 0
+        return Triple(newString, indent, style)
     }
 }
 
-fun getObsidianFileNameFromPath(path: String): String {
-    val file = path.split("%2F").last()
-    return file.replace("%20", " ").removeSuffix(".md")
-}
+fun getFileName(path: String): String
+{ return path.split("%2F").last() }
 
-class CustomTypefaceSpan(private val typeface: Typeface) : MetricAffectingSpan() {
-    override fun updateDrawState(ds: TextPaint) {
-        applyCustomTypeFace(ds, typeface)
-    }
+fun formatFileName(fileName: String): String
+{ return fileName.replace("%20", " ").removeSuffix(".md") }
 
-    override fun updateMeasureState(paint: TextPaint) {
-        applyCustomTypeFace(paint, typeface)
-    }
-
-    companion object {
-        private fun applyCustomTypeFace(paint: Paint, tf: Typeface) {
-            paint.typeface = tf
-        }
-    }
+fun getIntent(context: Context, path: String): PendingIntent {
+    val intent = Intent(Intent.ACTION_EDIT)
+    intent.data = Uri.parse("obsidian://open?file=" + Uri.encode(getFileName(path)))
+    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 }

@@ -1,15 +1,13 @@
 package com.sove67.markdown_widget
 
+import android.content.Context
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Typeface
-import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
-import android.text.style.ClickableSpan
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
+import android.text.style.*
 import android.util.Log
 import android.view.View
 import java.util.regex.Matcher
@@ -18,51 +16,35 @@ import java.util.regex.Pattern
 
 private const val BREAK_STRING = "\n"
 
-private const val BUNDLE_NAME = "stringList"
-class Parser {
-    // Taken, with great relief, from https://stackoverflow.com/questions/28695254/kotlin-and-discriminated-unions-sum-types
-    sealed class Either<out A, out B>
-    class L<A>(val value: A) : Either<A, Nothing>()
-    class R<B>(val value: B) : Either<Nothing, B>()
+class Parser(context: Context) {
 
-    /* Results from this function have to be separated out when it is called using this format:
-     * when (result) {
-     *      is L -> {} //For a bundle
-     *      is R -> {} //For an array of SpannableStringBuilders
-     * }
-     *
-     * Make sure to throw exceptions if you aren't handling one of the data types.
-     */
-    fun parse (title: String?, md: String, isBundled: Boolean):Either<Bundle, ArrayList<SpannableStringBuilder>> {
-
-        val lines: ArrayList<String> = md.split(BREAK_STRING).toCollection(ArrayList())
-        val spannedLines: ArrayList<Either<ArrayList<String>, SpannableStringBuilder>> = ArrayList()
+    fun parse (title: String?, md: String):ArrayList<SpannableStringBuilder> {
+        val lines: ArrayList<String> = md
+            .replace("\t", "    ")
+            .split(BREAK_STRING)
+            .toCollection(ArrayList())
+        val spannedLines: ArrayList<SpannableStringBuilder> = ArrayList()
 
         // span and add title
         if (title != null) {
             val builder = SpannableStringBuilder(title)
-            val line: Either<ArrayList<String>, SpannableStringBuilder> =
-                    addStyle(isBundled, arrayListOf(title), builder, -1, 0, title.length)
-            spannedLines.add(line)
+            spannedLines.add(addStyle(builder, -1, 0, title.length))
         }
 
         for (line:String in lines)
         {
-            var value: Either<ArrayList<String>, SpannableStringBuilder> =
-                if (isBundled) { L(arrayListOf(line)) }
-                else { R(SpannableStringBuilder(line)) }
-
+            Log.d(null, "Checking line: \"$line\"")
+            var value = SpannableStringBuilder(line)
             val (index: Int, format: String) = findFormatPrefix(line)
-            Log.d(null, "Returned index:${index}")
             if (index != (-1))
             {
                 // If the key is found in the format map
                 formatPrefix[format]?.let {
-                    Log.d(null, "Applying format ${it.second} to \"$line\"")
+                    Log.d(null, "Applying format ${it.second}.")
 
                     // replace it's occurrence in the line with the map's first value (the string)
                     // and update the builder to match
-                    val finalLine = line.replace(format, it.first)
+                    val finalLine = line.replaceFirst(format, it.first)
                     val builder = SpannableStringBuilder(finalLine)
 
                     // Add decoration depending on the map's second value (the int)
@@ -70,13 +52,7 @@ class Parser {
 
                     val prefixEnd = index + it.first.length
 
-                    value = addStyle(
-                        isBundled,
-                        arrayListOf(finalLine),
-                        builder,
-                        it.second,
-                        index,
-                        prefixEnd)
+                    value = addStyle(builder, it.second, index, prefixEnd)
                 }
             }
 
@@ -86,35 +62,16 @@ class Parser {
             spannedLines.add(value)
         }
 
-        // Split the either datatype inside the MutableList
-        return when (spannedLines[0]) {
-            is L -> {
-                val list: ArrayList<ArrayList<String>> = ArrayList()
-                for (item in spannedLines){
-                    //Either<SpannableStringBuilder, ArrayList<String>>
-                    val piece = item as L<ArrayList<String>>
-                    list.add(piece.value)
-                }
-                val bundle = Bundle()
-                bundle.putSerializable(BUNDLE_NAME, list)
-                L(bundle)
-            }
-            is R -> {
-                val list: ArrayList<SpannableStringBuilder> = ArrayList()
-                for (item in spannedLines){
-                    //Either<SpannableStringBuilder, ArrayList<String>>
-                    val piece = item as R<SpannableStringBuilder>
-                    list.add(piece.value)
-                }
-                R(list)
-            }
-        }
+        return spannedLines
     }
 
-    private val highlight: ForegroundColorSpan = ForegroundColorSpan(Color.parseColor("#FFC19EFF"))
+    private val highlight: ForegroundColorSpan = ForegroundColorSpan(Color.parseColor("#FFB07FFF"))
     private val bold: StyleSpan = StyleSpan(Typeface.BOLD)
-    private val large: RelativeSizeSpan = RelativeSizeSpan(2f)
-    val flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+    private val strikethrough = StrikethroughSpan()
+    private val huge: RelativeSizeSpan = RelativeSizeSpan(1.75f)
+    private val big: RelativeSizeSpan = RelativeSizeSpan(1.25f)
+    private val specialCharacter = CustomTypefaceSpan(Typeface.createFromAsset(context.assets, "sawarabi_mincho_regular.ttf"))
+    private val flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 
     // The OnClick listener is empty, as it doesn't seem to function in remote views.
     private val checkbox: ClickableSpan = object : ClickableSpan() {
@@ -128,115 +85,60 @@ class Parser {
         }
     }
 
-    // Map of which encoded strings refer to which of these https://developer.android.com/reference/android/text/style/package-summary
-    var spanStyleMap: Map<String, Any> = mapOf(
-        "checkbox" to checkbox,
-        "highlight" to highlight,
-        "bold" to bold,
-        "large" to large,
-    )
-
+    //①②③④⑤⑥⑦⑧⑨
+    //。◉◎
+    //◌○◔◑◕●
     private var formatPrefix: Map<String, Pair<String, Int>> = mapOf(
-        "- " to Pair("● ", 0),
-        "- [ ]" to Pair("□ ", 1),
-        "- [x]" to Pair("▣ ", 1),
-        "# " to Pair("", 2),
-        "## " to Pair("    ", 2),
-        "### " to Pair("        ", 2)
+        "1. " to Pair("① ", 0),
+        "2. " to Pair("② ", 0),
+        "3. " to Pair("③ ", 0),
+        "4. " to Pair("④ ", 0),
+        "5. " to Pair("⑤ ", 0),
+        "6. " to Pair("⑥ ", 0),
+        "7. " to Pair("⑦ ", 0),
+        "8. " to Pair("⑧ ", 0),
+        "9. " to Pair("⑨ ", 0),
+        "- " to Pair("◦ ", 0),
+        "- [ ] " to Pair("◎ ", 1),
+        "- [x] " to Pair("◉ ", 2),
+        "# " to Pair("", 3),
+        "## " to Pair("    ", 3),
+        "### " to Pair("        ", 3)
     )
 
-    // Find the first key in spanStyleMap that matches the given value
-    private fun spanString(value: Any): String{
-        return spanStyleMap.filterValues { it == value }.keys.first()
-    }
-
-    // Data required to add a Span to a SpannedStringBuilder
-    class Span(var spanType:String="", var start:Int=0, var end:Int=0) {
-
-        override fun toString(): String
-        { return "$spanType,$start,$end" }
-
-        fun parse(string:String): Span
-        {
-            val values = string.split(',')
-            return Span(values[0], values[1].toInt(), values[2].toInt())
-        }
-    }
-
-    private fun addStyle(isBundled: Boolean, list:ArrayList<String>, builder: SpannableStringBuilder, format: Int, index: Int, prefixEnd: Int)
-        : Either<ArrayList<String>, SpannableStringBuilder> {
-        if (isBundled) {
-            val line = list[0]
-            when (format) {
-                -1 -> {
-                    list.add(Span(spanString(highlight), index, prefixEnd).toString())
-                    list.add(Span(spanString(bold), 0, line.length).toString())
-                    list.add(Span(spanString(large), 0, line.length).toString())
-                }
-                // Bullet
-                0 -> list.add(Span(spanString(highlight), index, prefixEnd).toString())
-                // Checkbox (Done or Not Done)
-                1 -> list.add(Span(spanString(checkbox), index, prefixEnd).toString())
-                // Headers
-                2 -> {
-                    list.add(Span(spanString(highlight), 0, line.length).toString())
-                    list.add(Span(spanString(bold), 0, line.length).toString())
-                }
-                else -> throw Exception("Invalid format range in 'getSpanList'")
-            }
-            return L(list.toCollection(ArrayList()))
-        } else {
-            when (format) {
-                -1 -> {
-                    builder.setSpan(highlight, 0, builder.length, flag) //Purple
-                    builder.setSpan(bold, 0, builder.length, flag) //Bold
-                    builder.setSpan(large, 0, builder.length, flag) //Size
-                }
-                // Bullet
-                0 -> builder.setSpan(highlight, index, prefixEnd, flag)
-                // Checkbox (Done or Not Done)
-                1 -> builder.setSpan(checkbox, index, prefixEnd, flag)
-                // Headers
-                2 -> {
-                    builder.setSpan(highlight, 0, builder.length, flag) //Purple
-                    builder.setSpan(bold, 0, builder.length, flag) //Bold
-                }
-                else -> throw Exception("Invalid format range in 'setBuilder'")
-            }
-            return R(builder)
-        }
-    }
-
-    // Generate a list of Spans as strings in an array, with the first entry being the text.
-    private fun getSpanList(line:String, format: Int, index: Int, prefixEnd: Int): ArrayList<String> {
-        val list:ArrayList<String> = ArrayList()
-        list.add(line)
+    private fun addStyle(builder: SpannableStringBuilder, format: Int, index: Int, prefixEnd: Int)
+        : SpannableStringBuilder {
         when (format) {
             -1 -> {
-                list.add(Span(spanString(highlight), index, prefixEnd).toString())
-                list.add(Span(spanString(bold), 0, line.length).toString())
-                list.add(Span(spanString(large), 0, line.length).toString())
+                builder.setSpan(highlight, 0, builder.length, flag) //Purple
+                builder.setSpan(bold, 0, builder.length, flag) //Bold
+                builder.setSpan(huge, 0, builder.length, flag) //Size
             }
-            // Bullet
-            0 -> list.add(Span(spanString(highlight), index, prefixEnd).toString())
-            // Checkbox (Done or Not Done)
-            1 -> list.add(Span(spanString(checkbox), index, prefixEnd).toString())
-            // Headers
+            // Bullet & Numbers
+            0 -> {
+                builder.setSpan(highlight, index, prefixEnd, flag)
+                builder.setSpan(specialCharacter, index, prefixEnd, flag)
+            }
+            // Checkbox (Not Done)
+            1 -> {
+                builder.setSpan(checkbox, index, prefixEnd, flag)
+                builder.setSpan(specialCharacter, index, prefixEnd, flag)
+            }
+            // Checkbox (Done)
             2 -> {
-                list.add(Span(spanString(highlight), 0, line.length).toString())
-                list.add(Span(spanString(bold), 0, line.length).toString())
+                builder.setSpan(checkbox, index, prefixEnd, flag)
+                builder.setSpan(specialCharacter, index, prefixEnd, flag)
+                builder.setSpan(strikethrough, prefixEnd, builder.length, flag)
             }
-            else -> throw Exception("Invalid format range in 'getSpanList'")
+            // Headers
+            3 -> {
+                builder.setSpan(highlight, 0, builder.length, flag) //Purple
+                builder.setSpan(bold, 0, builder.length, flag) //Bold
+                builder.setSpan(big, 0, builder.length, flag) //Size
+            }
+            else -> throw Exception("Invalid format range in 'setBuilder'")
         }
-        return list.toCollection(ArrayList())
-    }
-
-    private fun createLine(string:String, spanList:List<Span>): ArrayList<String> {
-        val line: ArrayList<String> = ArrayList()
-        line.add(string)
-        for (span in spanList)
-        { line.add(span.spanType + "," + span.start + "," + span.end) }
-        return line.toCollection(ArrayList())
+        return builder
     }
 
     private fun findFormatPrefix(string: String): Pair<Int, String> {
@@ -251,7 +153,6 @@ class Parser {
             val matcher: Matcher = p.matcher(string)
             val bool = matcher.find()
 
-            if (bool) Log.d(null, "Prefix Matcher Start: ${matcher.start()}")
             // Check Against Whitespace Index
             if (bool && (endWhitespace == matcher.start()))
             {
@@ -270,15 +171,15 @@ class Parser {
     }
 
     private fun getFirstNonWhitespace(string:String): Int{
-        return if (string.isNotEmpty() && string[0] == ' '){
 
-            val p: Pattern = Pattern.compile("\\s+")
-            val matcher: Matcher = p.matcher(string)
-            matcher.find()
-            if (matcher.start() == 0) {
-                Log.d(null, "Whitespace Matcher Start: ${matcher.start()}")
-                matcher.end()
-            } else 0
+        val p: Pattern = Pattern.compile("\\s+")
+        val matcher: Matcher = p.matcher(string)
+
+        return if (string.isNotEmpty()
+            && matcher.find()
+            && string[0] == ' '
+            && matcher.start() == 0){
+            matcher.end()
         } else { 0 } //Default end index to 0
     }
 }
@@ -286,4 +187,20 @@ class Parser {
 fun getObsidianFileNameFromPath(path: String): String {
     val file = path.split("%2F").last()
     return file.replace("%20", " ").removeSuffix(".md")
+}
+
+class CustomTypefaceSpan(private val typeface: Typeface) : MetricAffectingSpan() {
+    override fun updateDrawState(ds: TextPaint) {
+        applyCustomTypeFace(ds, typeface)
+    }
+
+    override fun updateMeasureState(paint: TextPaint) {
+        applyCustomTypeFace(paint, typeface)
+    }
+
+    companion object {
+        private fun applyCustomTypeFace(paint: Paint, tf: Typeface) {
+            paint.typeface = tf
+        }
+    }
 }

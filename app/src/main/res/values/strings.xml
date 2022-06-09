@@ -2,8 +2,6 @@
     // App
     <string name="app_name">Markdown-Widget</string>
     <string name="info_functionality_in_widget">All the functionality for this app is in the widget.</string>
-    <string name="buy_me_a_coffee">Buy Me a Coffee</string>
-    <string name="appwidget_text">EXAMPLE</string>
 
     // Widget in List
     <string name="app_widget_description">Markdown Display Widget</string>
@@ -11,13 +9,7 @@
     // Widget Config
     <string name="configure_widget">Configure Widget</string>
     <string name="add_widget">Save</string>
-    <string name="markdown_file">Markdown file</string>
     <string name="browse">Browse</string>
-    <string name="what_to_do_when_tapping_the_widget">What to do when tapping the widget:</string>
-    <string name="open_in_default_markdown_app">Open in default markdown app</string>
-    <string name="open_in_obsidian_note_taking_app">Open in obsidian note taking app</string>
-    <string name="do_not_open">Do not open</string>
-    <string name="static_placeholder">Static Markdown Display</string>
     <string name="hint">Markdown File Filepath</string>
     <string name="line_text_placeholder">Line Text Placeholder</string>
 </resources>

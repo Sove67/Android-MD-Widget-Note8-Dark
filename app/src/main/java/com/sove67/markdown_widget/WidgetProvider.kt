@@ -10,7 +10,6 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.Log
 import android.widget.RemoteViews
 import java.io.BufferedReader
 import java.io.FileNotFoundException
@@ -58,16 +57,17 @@ class WidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        Log.d(null, "Loading Widget with ID \"$appWidgetId\"")
-        // Load File
+        // Get Path
         val path = loadPref(context, appWidgetId, PREF_FILE, "")
+
+        /*
         val fileUri = Uri.parse(path)
         val file = loadMarkdown(context, fileUri)
         val title = getObsidianFileNameFromPath(path)
-        val bundle = when (val parserOutput = Parser().parse(title, file,true)) {
+        val bundle = when (val parserOutput = Parser(context).parse(title, file,true)) {
             is Parser.L -> {parserOutput.value}
             is Parser.R -> {throw Exception("Invalid datatype")}
-        }
+         */
 
         // Create Remote View
         val views = RemoteViews(context.packageName, R.layout.markdown_file_widget)
@@ -76,15 +76,17 @@ class WidgetProvider : AppWidgetProvider() {
         val serviceIntent = Intent(context, WidgetService::class.java)
         serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         serviceIntent.data = Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME))
-        serviceIntent.putExtra("stringListBundle", bundle)
+        //serviceIntent.putExtra("stringListBundle", bundle)
+        serviceIntent.putExtra("path", path)
 
         // Set Adapter
         views.setRemoteAdapter(R.id.scrollable, serviceIntent)
 
-        // Tap Handling
+        /* Tap Handling
         views.setOnClickPendingIntent(
             R.id.markdown_display,
             getIntent(context, fileUri, context.contentResolver))
+        */
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views)

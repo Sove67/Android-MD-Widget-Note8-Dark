@@ -1,23 +1,31 @@
 package com.sove67.markdown_widget
 
 import android.os.Bundle
-import android.text.SpannableStringBuilder
 import android.util.Log
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 
 private const val TEST_TITLE = "Test"
-private const val TEST_TEXT = """# Header 1
+const val TEST_TEXT = """# Header 1
 ## Header 2
 testing ~~strikethrough~~, **bolded**, and *italicized* texts
 ### Header 3
-Is it only the first entry that loses it's mark?
+Testing plain text before a list
 - bullet point - with dash in it.
     - bullet point child
 - [ ] Incomplete checkbox
 - [x] Complete checkbox
     - [ ] Incomplete checkbox child
     - [x] Complete checkbox child
+1. item 1
+2. item 2
+3. item 3
+4. item 4
+51. item 51
+52. item 52
+53. item 53
+54. item 54
+
 3 Blank Lines:
 
 
@@ -32,10 +40,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         Log.d(null, TEST_TEXT)
-        val spanList = when (val parserOutput = Parser().parse(TEST_TITLE, TEST_TEXT, false)) {
-            is Parser.L -> {throw Exception("Invalid datatype")}
-            is Parser.R -> {parserOutput.value}
-        }
+        val spanList = Parser(baseContext).parse(TEST_TITLE, TEST_TEXT)
         val scrollable = findViewById<ListView>(R.id.scrollable)
         scrollable.adapter = MainService(baseContext, spanList)
 

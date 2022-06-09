@@ -19,6 +19,7 @@ Currently the widget is non-interactive. Tapping on links or checkboxes does not
 
 ## Planned Features
 * Checkbox Interaction
+  * Parent Reacts to child completion
 * Checkbox Colouration
 * Inline formatting
   * Italics
@@ -29,7 +30,6 @@ Currently the widget is non-interactive. Tapping on links or checkboxes does not
 * Reactive Widget Updates
 
 ## Known Bugs
-* Prefix formats (dashes and hashtags at the moment) will be converted even if they are in the middle of a line when viewing the preview in the app. It doesn't seem to happen in the widget.
 * Checkboxes don't display as purple in the widget, only the app
 * While changing the selected document via the configuration menu does update the widget's data, it does not refresh it's display. Currently, the user must wait for the next cycle of the 30 minute interval update schedule. Alternatively, they can delete the widget and add it once more to force an update.
 

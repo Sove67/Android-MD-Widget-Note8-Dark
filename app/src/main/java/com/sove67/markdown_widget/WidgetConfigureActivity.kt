@@ -4,10 +4,8 @@ import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import com.sove67.markdown_widget.databinding.MarkdownFileWidgetConfigureBinding
@@ -26,7 +24,6 @@ class WidgetConfigureActivity : Activity() {
 
     // Browse the Android Filesystem for files of type: Any
     private val onBrowse = View.OnClickListener {
-        Log.d(null, "onBrowse Triggered")
         // https://developer.android.com/reference/android/content/Intent#ACTION_OPEN_DOCUMENT
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -43,7 +40,6 @@ class WidgetConfigureActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == RESULT_OK && data?.data != null) {
             val uri: Uri = data.data!!
-            Log.d(null, uri.toString())
             inputFileName = uri.toString()
 
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -59,10 +55,7 @@ class WidgetConfigureActivity : Activity() {
     private val onAddWidget = View.OnClickListener {
         val context = this@WidgetConfigureActivity
 
-        Log.d(null, "saving")
-
         // Update the app widget via the configuration activity
-        AppWidgetManager.getInstance(context)
         getUpdatePendingIntent(context, appWidgetId).send()
 
         val widgetText = inputFilePath.text.toString()

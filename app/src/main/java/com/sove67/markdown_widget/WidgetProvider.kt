@@ -19,6 +19,7 @@ import java.util.stream.Collectors
  * Implementation of App Widget functionality.
  * App Widget Configuration implemented in [WidgetConfigureActivity]
  */
+
 class WidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
@@ -61,6 +62,11 @@ class WidgetProvider : AppWidgetProvider() {
         val serviceIntent = Intent(context, WidgetService::class.java)
         serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         serviceIntent.data = Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME))
+
+        // Create PendingIntent templates for the list item listeners to use
+        val path = loadPref(context, appWidgetId, PREF_FILE, "")
+        val pendingIntent = getObsidianURI(context, path)
+        views.setPendingIntentTemplate(R.id.scrollable, pendingIntent)
 
         // Set Adapter
         views.setRemoteAdapter(R.id.scrollable, serviceIntent)

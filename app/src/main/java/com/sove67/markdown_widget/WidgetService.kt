@@ -1,6 +1,5 @@
 package com.sove67.markdown_widget
 
-import android.R.attr.resource
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
@@ -10,7 +9,6 @@ import android.text.SpannableStringBuilder
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-
 
 class WidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -53,15 +51,14 @@ class WidgetService : RemoteViewsService() {
                 val color = resources.getColor(R.color.purple_200)
                 val tintedIcon = useImageAsMask(icon, color)
                 views.setImageViewBitmap(R.id.prefix, tintedIcon)
-
                 views.setViewVisibility(R.id.prefix, View.VISIBLE)
             } else { views.setViewVisibility(R.id.prefix, View.GONE) }
 
-            /*
             if (position == 0){
-                val listenerIntent = getIntent(context, path)
-                views.setOnClickPendingIntent(R.id.text, listenerIntent)
-            }*/
+                val fillInIntent = Intent()
+                //views.setOnClickFillInIntent(R.id.prefix, fillInIntent)
+                views.setOnClickFillInIntent(R.id.text, fillInIntent)
+            }
 
             return views
         }
@@ -86,7 +83,6 @@ class WidgetService : RemoteViewsService() {
             path = loadPref(context, appWidgetId, PREF_FILE, "")
             file = loadMarkdown(context, Uri.parse(path))
             title = formatFileName(getFileName(path))
-
             val output = Parser().parse(title, file)
             imgList = output.first
             spanList = output.second

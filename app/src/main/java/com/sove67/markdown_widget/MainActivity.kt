@@ -41,14 +41,5 @@ class MainActivity : AppCompatActivity() {
         val output = Parser().parse(TEST_TITLE, TEST_TEXT)
         val scrollable = findViewById<ListView>(R.id.scrollable)
         scrollable.adapter = MainService(baseContext, output)
-
-        /*
-        scrollable.onItemClickListener = OnItemClickListener { _, _, position, _ ->
-            if (position == 0){
-                val uri: Uri = Uri.parse(NOTE_URI)
-                val intent = Intent(Intent.ACTION_VIEW, uri)
-                startActivity(intent)
-            }
-        }*/
     }
 }

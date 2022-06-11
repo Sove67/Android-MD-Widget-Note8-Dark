@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import androidx.core.content.ContextCompat
 
+//const val TEST_FILE = "To%20Do"
 class MainService(
     context: Context,
     private val dataSource: Pair<ArrayList<String>, ArrayList<SpannableStringBuilder>>) : BaseAdapter() {
@@ -46,6 +47,13 @@ class MainService(
 
         val item = getItem(position)
         holder.button.text = item.second
+        /* For testing the header link.
+        if (position == 0){
+            holder.button.setOnClickListener {
+                val pendingIntent = getObsidianURI(parent.context, TEST_FILE)
+                pendingIntent.send()
+            }
+        }*/
 
         val imgName = item.first
         if (imgName != "") {

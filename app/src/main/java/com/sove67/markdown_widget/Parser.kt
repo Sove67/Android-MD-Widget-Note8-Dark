@@ -177,8 +177,10 @@ fun getFileName(path: String): String
 fun formatFileName(fileName: String): String
 { return fileName.replace("%20", " ").removeSuffix(".md") }
 
-fun getIntent(context: Context, path: String): PendingIntent {
-    val intent = Intent(Intent.ACTION_EDIT)
-    intent.data = Uri.parse("obsidian://open?file=" + Uri.encode(getFileName(path)))
+fun getObsidianURI(context: Context, path: String): PendingIntent {
+    val intent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("obsidian://open?file=" + getFileName(path)))
+    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 }
